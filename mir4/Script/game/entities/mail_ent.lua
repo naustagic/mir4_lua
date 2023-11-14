@@ -44,11 +44,12 @@ function mail_ent.get_mail()
     for i = 1, 5 do
         local num = mail_unit.get_mail_num_byidx(i)
         if num > 0 then
-            -- 阅读并领取 12
-            -- git测试
+            -- 阅读并领取 13
+            -- git测试哇哇哇
+            -- sdshd
             mail_unit.read_mail(i)
             decider.sleep(2000)
-            -- 删除 12
+            -- 删除 13
             mail_unit.del_mail(i)
             decider.sleep(2000)
         end
