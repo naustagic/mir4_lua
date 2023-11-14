@@ -42,7 +42,7 @@ function main_test()
     core.entry() -- 入口调用
     local str = string.format('%s：测试脚本已停止',os.date("%H-%M"))
     main_ctx:set_action(str)
-
+    --git 测试
 end
 
 --高级月光魔石
