@@ -48,7 +48,6 @@ function mail_ent.get_mail()
             -- git测试
             mail_unit.read_mail(i)
             decider.sleep(2000)
-            -- 删除 10
             mail_unit.del_mail(i)
             decider.sleep(2000)
         end
