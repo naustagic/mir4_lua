@@ -13,7 +13,7 @@
 local import = import
 
 local is_exit = is_exit
-local sleep = sleep
+local sleep = sleep   
 -- 引入管理对象
 local core = import('base/core')
 
