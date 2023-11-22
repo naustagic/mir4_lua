@@ -39,9 +39,15 @@ local item_ent = import('game/entities/item_ent')
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function training_ent.super_preload()
-    --training_ent.force()
-    --training_ent.physical()
+    this.wi_auto_training = decider.run_interval_wrapper('自动修炼', this.auto_training, 1000 * 10 * 60)
 end
+
+function training_ent.auto_training()
+    training_ent.force()
+
+    training_ent.physical()
+end
+
 
 -- 内功
 function training_ent.force()
@@ -63,14 +69,26 @@ function training_ent.force()
                 -- 可升等级
                 local can_up_level = inner_level * 5
                 local num = 0
+                local need_money = 100
+                if inner_level == 5 then
+                    need_money = 8000
+                elseif inner_level == 4 then
+                    need_money = 4000
+                elseif inner_level == 3 then
+                    need_money = 1000
+                elseif inner_level == 2 then
+                    need_money = 500
+                end
                 for j = 0, 3 do
                     while decider.is_working() do
                         -- 体质小项等级
                         local mastery_level = force_unit.get_force_child_level(skill_id, j)
                         if mastery_level < can_up_level then
-                            if force_unit.force_can_update(skill_id, j) and actor_unit.get_cost_data(0xB) >= 500 then
+                            if force_unit.force_can_update(skill_id, j) and actor_unit.get_cost_data(0xB) >= need_money then
                                 force_unit.train_inner_skill(skill_id, j)
                                 trace.output('升级内功[' .. skill_name .. ']第[' .. j .. ']项中...')
+                                decider.sleep(1000)
+                                main_ctx:do_skey(0x1B)
                                 decider.sleep(1000)
                                 main_ctx:do_skey(0x1B)
                             else
@@ -79,7 +97,7 @@ function training_ent.force()
                         else
                             break
                         end
-                        decider.sleep(1000)
+                        decider.sleep(30)
                     end
                     if force_unit.get_force_child_level(skill_id, j) >= can_up_level then
                         num = num + 1
@@ -89,9 +107,11 @@ function training_ent.force()
                     -- 升阶功法
                     if training_ent.can_up_force(skill_id) then
                         trace.output('升阶内功[' .. skill_name .. ']中...')
-                        force_unit.inner_update(i)
+                        force_unit.inner_update(skill_id)
                         decider.sleep(1000)
                         force_unit.inner_refresh(skill_id)
+                        decider.sleep(1000)
+                        main_ctx:do_skey(0x1B)
                         decider.sleep(1000)
                         main_ctx:do_skey(0x1B)
                     else
@@ -103,7 +123,7 @@ function training_ent.force()
             else
                 break
             end
-            decider.sleep(1000)
+            decider.sleep(30)
         end
     end
 end
@@ -112,12 +132,12 @@ end
 function training_ent.physical()
     local physical_list = {
         ['物理防御'] = { idx = 1 },
-        ['法术防御'] = { idx = 1 },
-        ['生命值'] = { idx = 1 },
-        ['魔力'] = { idx = 1 },
-        ['回避'] = { idx = 1 },
-        ['命中'] = { idx = 1 },
-        ['物理攻击'] = { idx = 1 },
+        ['法术防御'] = { idx = 2 },
+        ['生命值'] = { idx = 3 },
+        ['魔力'] = { idx = 4 },
+        ['回避'] = { idx = 5 },
+        ['命中'] = { idx = 6 },
+        ['物理攻击'] = { idx = 7 },
     }
     while decider.is_working() do
 
@@ -127,14 +147,14 @@ function training_ent.physical()
         for name, info in pairs(physical_list) do
             local idx = info.idx
             while decider.is_working() do
+
                 -- 体质小项等级
                 local mastery_level = force_unit.get_mastery_level_byid(idx)
                 if mastery_level < can_up_level then
-                    if force_unit.mastery_can_update(idx) and actor_unit.get_cost_data(0xB) >= 500 then
+                    if force_unit.mastery_can_update(idx) and actor_unit.get_cost_data(2) >= 500 then
                         skill_unit.sta_training(idx)
                         trace.output('升级体质[' .. name .. ']中...')
                         decider.sleep(1000)
-
                     else
                         break
                     end
@@ -147,6 +167,7 @@ function training_ent.physical()
                 up_num = up_num + 1
             end
         end
+
         if up_num >= 7 and training_ent.can_up_physical() then
             force_unit.mastery_update()  --体质升阶
             trace.output('体质升阶中...')
@@ -163,6 +184,7 @@ end
 function training_ent.can_up_physical()
     local mastery_main_level = force_unit.get_mastery_main_level()
     if mastery_main_level >= 4 then
+        xxmsg(1)
         return false
     end
     local need_item_list = {

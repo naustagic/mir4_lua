@@ -78,8 +78,9 @@ end
 -------------------------------------------------------------------------------------
 -- 预载处理
 login.preload = function()
-
-
+    -- if not game_unit.black_screen() then
+    --     game_unit.black_screen()-- 黑屏
+    -- end
 end
 
 -------------------------------------------------------------------------------------
@@ -97,6 +98,17 @@ login.entry = function()
         [login_res.STATUS_CHARACTER_SELECT]         = login_ent.select_char_in_game,
         -- 选择服务器
         [login_res.STATUS_SERVER_SELECT_PAGE]         = login_ent.select_server,
+        -- 选择谷歌登录
+        [login_res.STATUS_LOGO_PAGE]         = login_ent.google_login,
+        -- 选择协议
+        [login_res.SELECT_XIEYI]         = login_ent.select_all,
+        -- 选择生日
+        [login_res.SELECT_BIRTHDAY]         = login_ent.select_date,
+
+        -- 选择生日
+        [login_res.STATUS_FOUND_SELECT]         = login_ent.select_char,
+
+
     }
     -- 加载前延迟
     decider.sleep(3000)
@@ -107,9 +119,11 @@ login.entry = function()
 
         -- 读取游戏状态
         local status = game_unit.game_status_ex()
+        xxmsg(string.format('0x%X',status))
         -- 根据状态执行相应功能
         local action = action_list[status]
         if action then
+            xxmsg(        xxmsg(string.format('进入0x%X',status)))
             -- 执行函数
             action()
         end

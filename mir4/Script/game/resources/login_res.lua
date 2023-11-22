@@ -20,14 +20,22 @@ local login_res = {
 
     -- 启动页面
     STATUS_INTRO_PAGE = 0x0, -- 0x01,            -- 进入游戏时的启动页面
-    STATUS_LOGO_PAGE = 0x4,             -- 游戏logo页面
+    STATUS_LOGO_PAGE = 0x60,             -- 游戏logo页面
 
+    -- 选择协议
+    SELECT_XIEYI = 0x420,
+
+    --生日
+    SELECT_BIRTHDAY = 0x1020,
     -- 登陆页面
     STATUS_GOOGLE_LOGIN_PAGE = 102,      --0x80,     -- Google账号登陆页面
     STATUS_SERVER_SELECT_PAGE = 0x820,     --0x800,   -- 服务器选择页面
     STATUS_ZHIGE_YANZHENG = 0xA0,
     -- 选择角色
     STATUS_CHARACTER_SELECT = 0x4000,       --0x4000,    -- 角色选择页面
+    -- 创建角色
+    STATUS_FOUND_SELECT = 0x40000,       --0x4000,    -- 创建角色选择页面
+
     -- 创建角色
     -- 游戏里面
     STATUS_IN_GAME = 0x100000,                --0x100000,           -- 进入游戏内部状态

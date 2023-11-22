@@ -45,6 +45,10 @@ _G.trace = import('base/trace')
 -- 决策模块
 _G.decider = import('base/decider')
 _G.common  = import('game/entities/common')
+-- 决策模块
+_G.func = import('base/func')
+
+
 -- 模块列表
 core.module_list = import('game/modules')
 

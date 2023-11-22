@@ -36,13 +36,11 @@ local local_player = local_player
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function gift_ent.super_preload()
-    ---- 领取每日课题
-    --gift_ent.daily_work()
-    ---- 领取成就
-    --gift_ent.sign()
-    ---- 签到
-    --gift_ent.achievement()
+    this.wi_daily_work = decider.run_interval_wrapper('领取每日课题', this.daily_work, 1000 * 60 * 60 * 1)
+    this.wi_sign = decider.run_interval_wrapper('领取成就', this.sign, 1000 * 60 * 60 * 1)
+    this.wi_achievement = decider.run_interval_wrapper('每日签到', this.achievement, 1000 * 60 * 60 * 5)
 end
+
 
 -- 领取每日课题
 function gift_ent.daily_work()

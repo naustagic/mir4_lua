@@ -36,7 +36,7 @@ local item_ent = import('game/entities/item_ent')
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function stone_ent.super_preload()
-
+    this.wi_set_magic_stone = decider.run_interval_wrapper('自动镶嵌魔石', this.set_magic_stone, 1000 * 10 * 60)
 end
 
 -- 镶嵌魔石
