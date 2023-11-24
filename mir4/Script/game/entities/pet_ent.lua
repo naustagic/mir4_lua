@@ -29,22 +29,172 @@ local this = pet_ent
 local trace = trace
 -- 决策模块
 local decider = decider
-local skill_unit = skill_unit
-local main_ctx = main_ctx
-local local_player = local_player
+local pet_ctx = pet_ctx
+local pet_unit = pet_unit
+local item_ctx = item_ctx
+---@type item_res
+local item_res = import('game/resources/item_res')
+---@type pet_res
+local pet_res = import('game/resources/pet_res')
+
+---@type item_ent
+local item_ent = import('game/entities/item_ent')
 ------------------------------------------------------------------------------------
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function pet_ent.super_preload()
-    this.wi_test_read = decider.run_interval_wrapper('读取测试', this.test_read, 1000 * 5)
-    pet_ent.test_read()
+    this.wi_auto_pet = decider.run_interval_wrapper('自动宠物', this.auto_pet, 1000 * 10 * 60)
+end
+function pet_ent.auto_pet()
+    pet_ent.get_can_use_pet()
+    pet_ent.go_war_pet()
+    pet_ent.auto_pet_equip()
 end
 
 
-function pet_ent.test_read()
-    return this.MODULE_NAME
+
+
+------------------------------------------------------------------------------------
+---通过名字判断是否获得精灵并返回精灵id
+function pet_ent.get_can_use_pet()
+    local pet_list = {}
+    local list = pet_unit.list()
+    for i = 1, #list do
+        if pet_ctx:init(list[i]) then
+            if pet_ctx:can_summon() then
+                -- 是否可召唤
+                trace.output('召唤宠物' .. pet_ctx:name())
+                pet_unit.summon_pet(pet_ctx:id())
+                decider.sleep(2000)
+                local pet_info = {
+                    obj = list[i],
+                    id = pet_ctx:id(),
+                    name = pet_ctx:name(),
+                }
+                table.insert(pet_list, pet_info)
+            elseif pet_ctx:is_unlock() then
+                -- 是否解锁
+                local pet_info = {
+                    obj = list[i],
+                    id = pet_ctx:id(),
+                    name = pet_ctx:name(),
+                }
+                table.insert(pet_list, pet_info)
+            end
+        end
+    end
+    return pet_list
 end
 
+function pet_ent.go_war_pet()
+
+    local pet = {}
+    local pet_list = pet_res.PET_LIST
+    local can_use_pet = pet_ent.get_can_use_pet()
+    for i = 1, #can_use_pet do
+        local name = can_use_pet[i].name
+        if pet_list[name] then
+            local pet_info = {
+                name = name,
+                id = can_use_pet[i].id,
+                name = name,
+                power = pet_list[name].power,
+            }
+            table.insert(pet, pet_info)
+        end
+    end
+    if #pet > 1 then
+        table.sort(pet, function(a, b)
+            return a.power > b.power
+        end)
+    end
+    for pos = 0, 2 do
+        if not table.is_empty(pet[pos + 1]) then
+            if pet_unit.get_warpet_obj_byidx(pos) ~= pet_unit.get_pet_object_byid(pet[pos + 1].id) then
+                pet_unit.go_war_pet(pet[pos + 1].id, pos)
+                trace.output('设置' .. pet[pos + 1].name .. '到' .. pos + 1)
+                decider.sleep(2000)
+            end
+        end
+    end
+end
+
+function pet_ent.auto_pet_equip()
+    local pet_equip = item_ent.get_all_bag_pet_equip_info()
+    if table.is_empty(pet_equip) then
+        return false
+    end
+    for i = 0, 2 do
+        local obj = pet_unit.get_warpet_obj_byidx(i)
+        if pet_ctx:init(obj) then
+            if table.is_empty(pet_equip) then
+                break
+            end
+            local item_list = pet_ctx:pet_item_list()
+            if #item_list < pet_res.PET_LIST[pet_ctx:name()].quality then
+                for j = 1, #pet_equip do
+                    if pet_res.PET_EQUIP[pet_equip[j].name].name then
+                        local equip = false
+                        for s = 1, #pet_res.PET_EQUIP[pet_equip[j].name].name do
+                            if pet_res.PET_EQUIP[pet_equip[j].name].name[s] == pet_ctx:name() then
+                                equip = true
+                            end
+                        end
+                        if equip then
+                            pet_unit.grant_item(pet_ctx:id(), pet_equip[j].sys_id, #item_list)
+                            decider.sleep(1000)
+                            pet_equip = item_ent.get_all_bag_pet_equip_info()
+                            break
+                        end
+                    else
+                        pet_unit.grant_item(pet_ctx:id(), pet_equip[j].sys_id, #item_list)
+                        decider.sleep(1000)
+                        pet_equip = item_ent.get_all_bag_pet_equip_info()
+                        break
+                    end
+                end
+            else
+                for j = 1, #item_list do
+                    local item_obj = item_list[j]
+                    if item_ctx:init(item_obj) then
+                        for k = 1, #pet_equip do
+                            if pet_res.PET_EQUIP[pet_equip[k].name].name then
+                                local equip = false
+                                for s = 1, #pet_res.PET_EQUIP[pet_equip[k].name].name do
+                                    if pet_res.PET_EQUIP[pet_equip[k].name].name[s] == pet_ctx:name() then
+                                        equip = true
+                                    end
+                                end
+                                if equip then
+                                    if item_res.QUALITY[item_ctx:quality()] < pet_equip[k].quality then
+                                        pet_unit.grant_item(pet_ctx:id(), pet_equip[k].sys_id, j)
+                                        decider.sleep(1000)
+                                        pet_equip = item_ent.get_all_bag_pet_equip_info()
+                                        break
+                                    end
+                                end
+                            else
+                                if item_res.QUALITY[item_ctx:quality()] < pet_equip[k].quality then
+                                    pet_unit.grant_item(pet_ctx:id(), pet_equip[k].sys_id, j)
+                                    decider.sleep(1000)
+                                    pet_equip = item_ent.get_all_bag_pet_equip_info()
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+--说明：授予宝物
+--参数1：精灵ID
+--参数2：物品系统ID
+--参数3：位置
+--返回：bool
+--函数：pet_unit.grant_item(int nPetId, uint64_t ItemSysId, int nPos)
 
 ------------------------------------------------------------------------------------
 -- [内部] 将对象转换为字符串

@@ -39,13 +39,16 @@ local item_ent = import('game/entities/item_ent')
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function skill_ent.super_preload()
-
+    this.wi_auto_skill = decider.run_interval_wrapper('自动技能', this.auto_skill, 1000 * 10 * 60)
 end
 
 -- 升级技能
-
-
-
+function skill_ent.auto_skill()
+    skill_ent.study_skill()
+    skill_ent.up_skill()
+    skill_ent.enhanced_skill()
+    skill_ent.config_skill()
+end
 
 -- 学习技能
 function skill_ent.study_skill()
@@ -69,7 +72,7 @@ function skill_ent.study_skill()
     local list = skill_unit.list(-1)
     for i = 1, #list do
         local obj = list[i]
-        if skill_ctx:init(obj) and skill_ctx:   () > 0 then
+        if skill_ctx:init(obj) and skill_ctx:study_level() > 0 then
             local skill_name = skill_ctx:name()
             if skill_list[skill_name] then
                 local skill_id = skill_ctx:id()
@@ -84,10 +87,8 @@ function skill_ent.study_skill()
 end
 
 -- 升级技能
-function skill_ent.up_skill()
-    if actor_unit.get_cost_data(2) < 64000 then
-        return
-    end
+function skill_ent.up_skill(quest)
+
     local skill_list = {
         ['漫天花雨'] = {},
         ['速射'] = {},
@@ -102,7 +103,6 @@ function skill_ent.up_skill()
         ['毒雾弹'] = {},
         ['追魂箭'] = {},
         ['隐身术'] = {},
-
     }
     local my_level = local_player:level()
     for name, info in pairs(skill_list) do
@@ -111,20 +111,35 @@ function skill_ent.up_skill()
             if table.is_empty(skill_info) then
                 break
             end
-            if actor_unit.get_cost_data(2) < 64000 then
-                return
-            end
+
             if skill_info.study_level > my_level then
                 break
             end
             if skill_info.level >= 4 then
                 break
             end
+            local need_money = 400
+            local need_zhengqi = 50
             local need_num = 2
             if skill_info.level == 2 then
                 need_num = 3
+                need_money = 3200
+                need_zhengqi = 400
             elseif skill_info.level == 3 then
+                need_money = 16000
                 need_num = 4
+                need_zhengqi = 2000
+            end
+            if '漫天花雨' == name then
+                need_num = need_num + 3
+                need_money = need_money * 2
+                need_zhengqi = need_zhengqi * 2
+            end
+            if actor_unit.get_cost_data(2) < need_money then
+                break
+            end
+            if actor_unit.get_cost_data(0xB) < need_zhengqi then
+                break
             end
             local item_num = item_ent.get_item_num_by_name('高级武功秘籍')
             if item_num < need_num then
@@ -246,7 +261,6 @@ function skill_ent.config_skill()
     end
 end
 
-
 --通过技能名称获取技能信息
 skill_ent.get_skill_info_by_name = function(name, action)
     local skill_info = {}
@@ -271,7 +285,6 @@ skill_ent.get_skill_info_by_name = function(name, action)
 
     return skill_info
 end
-
 
 ------------------------------------------------------------------------------------
 -- [内部] 将对象转换为字符串

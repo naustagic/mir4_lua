@@ -34,15 +34,78 @@ local item_ctx = item_ctx
 local item_unit = item_unit
 local pet_ctx = pet_ctx
 local unsealing_unit = unsealing_unit
+local relation_unit = relation_unit
 local pet_unit = pet_unit
+local local_player = local_player
+local actor_unit = actor_unit
+local game_unit = game_unit
+local main_ctx = main_ctx
+---@type pet_res
+local pet_res = import('game/resources/pet_res')
+
 ---@type item_res
 local item_res = import('game/resources/item_res')
 ------------------------------------------------------------------------------------
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function item_ent.super_preload()
+    this.wi_use_unsealing_box = decider.run_interval_wrapper('封印宝箱', this.use_unsealing_box, 1000 * 10 * 60)
+    this.wi_sell_item = decider.run_interval_wrapper('出售物品', this.sell_item, 1000 * 10 * 60)
+    this.wi_auto_use_item = decider.run_interval_wrapper('使用物品', this.auto_use_item, 1000 * 10 * 60)
+    this.wi_use_zhaohuan_item = decider.run_interval_wrapper('使用召唤券', this.use_zhaohuan_item, 1000 * 10 * 60)
+    this.wi_use_fashion_item = decider.run_interval_wrapper('使用时装', this.use_fashion_item, 1000 * 10 * 60)
+
+    this.wi_set_quick_slot = decider.run_interval_wrapper('设置药品快捷', this.set_quick_slot, 1000 * 10)
+
 
 end
+
+
+-- 自动设置药品
+function item_ent.set_quick_slot()
+    local set_hp_list = { { name = '大型生命值恢复药水', id = 0x24035CA7 }, { name = '中型生命值恢复药水', id = 0x24035CA6 }, { name = '小型生命值恢复药水', id = 0x24035CA5 } }
+    local set_mp_list = { { name = '大型魔力恢复药水', id = 0x24129EE7 }, { name = '中型魔力恢复药水', id = 0x24129EE6 }, { name = '小型魔力恢复药水', id = 0x24129EE5 } }
+    for i = 1, #set_hp_list do
+        local hp_name = set_hp_list[i].name
+        local id = set_hp_list[i].id
+        local item_num = item_ent.get_item_num_by_name(hp_name)
+        if item_num > 0 then
+            local set_pos = false
+
+            if local_player:hp() * 100 / local_player:max_hp() < actor_unit.get_game_option_status(0x8) then
+                if not item_unit.item_is_cool(id) then
+                    set_pos = true
+                end
+            end
+
+            if actor_unit.get_game_option_status(0x8) == 0 then
+                game_unit.set_quick_slot(id, 0)
+                decider.sleep(1000)
+            end
+            break
+        end
+    end
+    for i = 1, #set_mp_list do
+        local mp_name = set_mp_list[i].name
+        local id = set_mp_list[i].id
+        local item_num = item_ent.get_item_num_by_name(mp_name)
+        if item_num > 0 then
+            local set_pos = false
+            if local_player:mp() * 100 / local_player:max_mp() < actor_unit.get_game_option_status(0x9) then
+                if not item_unit.item_is_cool(id) then
+                    set_pos = true
+                end
+            end
+            if actor_unit.get_game_option_status(0x9) == 0 or set_pos then
+                game_unit.set_quick_slot(id, 1)
+                decider.sleep(1000)
+            end
+            break
+        end
+    end
+end
+
+
 
 -- 通过物品名物品数量获取物品sys_id
 function item_ent.get_item_sys_id_by_name_and_num(item_name, item_num)
@@ -69,7 +132,6 @@ function item_ent.get_item_num_by_name(item_name)
             local num = item_ctx:num()
             if num > 0 and item_name == item_ctx:name() then
                 item_num = item_num + num
-                break
             end
         end
     end
@@ -214,8 +276,6 @@ function item_ent.get_can_use_space()
     local use_pet_equip_num = item_ent.pet_equip_num()
     use_space = use_space - use_pet_equip_num
 
-
-
     return item_unit.get_bag_max_space() - use_space
 end
 
@@ -237,6 +297,7 @@ function item_ent.pet_equip_num()
     end
     return num
 end
+
 -- 获取背包所有物品信息
 function item_ent.get_all_bag_item_info()
     local item_info_list = {}
@@ -245,6 +306,49 @@ function item_ent.get_all_bag_item_info()
         if item_ctx:init(obj) then
             local num = item_ctx:num()
             if num > 0 then
+                local item_info = {
+                    -- 指针
+                    obj = obj,
+                    --资源指针
+                    res_ptr = item_ctx:res_ptr(),
+                    -- 系统id
+                    sys_id = item_ctx:sys_id(),
+                    -- 品质
+                    quality = item_res.QUALITY[item_ctx:quality()],
+                    -- id
+                    id = item_ctx:id(),
+                    -- 数量
+                    num = num,
+                    -- 装备部位
+                    equip_type = item_ctx:equip_type(),
+                    -- 强化等级
+                    equip_enhanced_level = item_ctx:equip_enhanced_level(),
+                    -- 战力
+                    equip_combat_power = item_ctx:equip_combat_power(),
+                    -- 装备职业
+                    equip_job = item_ctx:equip_job(),
+                    -- 是否绑定
+                    is_bind = item_ctx:is_bind(),
+                    -- 是否使用中
+                    equip_is_use = item_ctx:equip_is_use(),
+                    -- 装备名字
+                    name = item_ctx:name()
+                }
+                table.insert(item_info_list, item_info)
+            end
+        end
+    end
+    return item_info_list
+end
+
+-- 获取背包所有宠物装备物品信息
+function item_ent.get_all_bag_pet_equip_info()
+    local item_info_list = {}
+    local item_list = item_unit.list(-1)
+    for _, obj in pairs(item_list) do
+        if item_ctx:init(obj) then
+            local num = item_ctx:num()
+            if num > 0 and  pet_res.PET_EQUIP[item_ctx:name()] and not item_ctx:equip_is_use()then
                 local item_info = {
                     -- 指针
                     obj = obj,
@@ -290,15 +394,19 @@ function item_ent.use_unsealing_box()
             unsealing_unit.get_box_reward(i)
             decider.sleep(1000)
 
+            main_ctx:do_skey(0x1B)
+            decider.sleep(1000)
+            main_ctx:do_skey(0x1B)
         end
     end
+
     if unsealing_unit.get_unsealing_num() >= unsealing_unit.get_unsealing_solt_num() then
         return
     end
     local all_item_info = item_ent.get_all_bag_item_info()
     for i = 1, #all_item_info do
         local item_info = all_item_info[i]
-        if string.find(item_info.name, '封印宝箱') then
+        if (string.find(item_info.name, '封印') and string.find(item_info.name, '箱') )or item_info.name == '神秘魔法箱' then
             -- 使用封印宝箱
             unsealing_unit.use_box(item_info.sys_id)
             decider.sleep(1000)
@@ -314,6 +422,10 @@ function item_ent.sell_item()
     local all_bag_item_info = item_ent.get_all_bag_item_info()
     local sell_quan = item_res.SELL_ITEM.QUAN
     local sell_mohu = item_res.SELL_ITEM.MOHU
+    if local_player:level() >= 20 then
+        table.insert(sell_quan, '小型生命值恢复药水')
+        table.insert(sell_quan, '小型魔力恢复药水')
+    end
     for i = 1, #all_bag_item_info do
         if all_bag_item_info[i].is_bind then
             local item_name = all_bag_item_info[i].name
@@ -341,8 +453,7 @@ function item_ent.sell_item()
     end
 end
 
-
-
+-- 使用物品
 function item_ent.auto_use_item()
     local use_quan = item_res.USE_ITEM.QUAN
     local use_mohu = item_res.USE_ITEM.MOHU
@@ -367,13 +478,35 @@ function item_ent.auto_use_item()
             end
             if use_item then
                 trace.output('使用物品' .. all_bag_item_info[i].name .. '>数量:' .. all_bag_item_info[i].num)
-                xxmsg('使用物品' .. all_bag_item_info[i].name .. '>数量:' .. all_bag_item_info[i].num)
                 item_unit.use_item(all_bag_item_info[i].sys_id, all_bag_item_info[i].num)
                 decider.sleep(500)
             end
         end
     end
+
 end
+
+-- 使用时装
+function item_ent.use_fashion_item()
+    local all_bag_item_info = item_ent.get_all_bag_item_info()
+    for i = 1, #all_bag_item_info do
+        if all_bag_item_info[i].is_bind then
+            local item_name = all_bag_item_info[i].name
+            if item_res.FASHION[item_name] then
+                trace.output('使用时装' .. item_name)
+                relation_unit.ran_se(item_res.FASHION[item_name])
+                decider.sleep(500)
+            end
+        end
+    end
+
+    local fashion_id = item_res.FASHION['密行巫服交换券']
+    if relation_unit.costume_is_unlock(fashion_id) and not relation_unit.costume_is_use(fashion_id) then
+        relation_unit.use_costume(fashion_id)
+        decider.sleep(2000)
+    end
+end
+
 
 -- 使用召唤券
 function item_ent.use_zhaohuan_item()

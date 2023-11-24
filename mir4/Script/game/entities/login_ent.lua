@@ -34,6 +34,7 @@ local game_unit = game_unit
 local ui_unit = ui_unit
 local role_unit = role_unit
 local main_ctx = main_ctx
+---@type login_res
 local login_res = import('game/resources/login_res')
 ------------------------------------------------------------------------------------
 -- [事件] 预载函数(重载脚本)
@@ -162,6 +163,12 @@ function login_ent.select_char()
     local name = ""
     while decider.is_working() do
         num = num + 1
+        if login_res.STATUS_CHARACTER_SELECT == game_unit.game_status_ex() then
+            break
+        end
+        if num >= 3 then
+            break
+        end
         name = login_res.get_player_name()
         if this.select_race(job) then
             role_unit.enter_create_page()-- 进入创建角色

@@ -33,6 +33,7 @@ local item_unit = item_unit
 local actor_unit = actor_unit
 local item_ctx = item_ctx
 local main_ctx = main_ctx
+local shop_unit = shop_unit
 ---@type equip_res
 local equip_res = import('game/resources/equip_res')
 ---@type item_ent
@@ -44,15 +45,16 @@ local item_ent = import('game/entities/item_ent')
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function equip_ent.super_preload()
-    ---- 打造
-    --equip_ent.auto_build_equip()
-    ---- 佩戴
-    --equip_ent.auto_use_equip()
+    this.wi_auto_equip = decider.run_interval_wrapper('自动装备', this.auto_equip, 1000 * 60 * 10)
 end
 
-
+function equip_ent.auto_equip()
+    equip_ent.auto_use_equip()
+    equip_ent.auto_build_equip()
+end
 
 -- 佩戴装备
+
 
 
 
@@ -120,9 +122,6 @@ equip_ent.auto_use_equip = function()
     end
 end
 
-
-
-
 -- 自动打造装备
 equip_ent.auto_build_equip = function()
     local equip_list = equip_res.EQUIP_INFO
@@ -137,20 +136,61 @@ equip_ent.auto_build_equip = function()
                 break
             end
         end
-        local build = 2
-        if v[equip_info.quality] == equip_info.name then
+        local build = 1
+        if equip_info.quality == 2 and v[2] == equip_info.name then
             build = 3
+        elseif equip_info.quality == 2 then
+            build = 2
+        elseif equip_info.quality == 3 then
+            build = 4
         end
+
+        if build == 2 then
+            -- 删除 白色装备
+            equip_ent.auto_del_equip(equip_pos, 1)
+        elseif build == 3 or build == 4 then
+            -- 删除 绿色装备
+            equip_ent.auto_del_equip(equip_pos, 2)
+        end
+
         local build_equip = v[build]
         this.build_equip_2(build_equip)
-        if not table.is_empty(equip_info) and (v[equip_info.quality] == equip_info.name or equip_info.quality == 3) then
-            this.enhanced_equip(equip_info.obj)
+        if not table.is_empty(equip_info) then
+            if (v[equip_info.quality] == equip_info.name or equip_info.quality == 3) then
+                this.enhanced_equip(equip_info.obj)
+            end
+            if v[1] == equip_info.name then
+                this.enhanced_equip(equip_info.obj, 1)
+            end
         end
     end
 end
 
-
-
+-- 自动删除装备
+equip_ent.auto_del_equip = function(equip_pos, equip_quality)
+    local my_job = actor_unit.get_char_race()
+    local item_list = item_ent.get_all_bag_item_info()
+    for i = 1, #item_list do
+        local item_info = item_list[i]
+        if not item_info.equip_is_use and item_info.equip_combat_power > 0 then
+            local del = false
+            if equip_pos == item_info.equip_type and equip_quality == item_info.quality then
+                del = true
+            end
+            if item_info.equip_job ~= 0 and item_info.equip_job ~= my_job then
+                del = true
+            end
+            if not equip_res.BUILD_EQUIP_LIST[item_info.name] then
+                del = true
+            end
+            if del then
+                trace.output('出售装备' .. item_info.name)
+                shop_unit.sell_item(item_info.sys_id, item_info.num)
+                decider.sleep(500)
+            end
+        end
+    end
+end
 
 -- 打造材料类型的装备
 function equip_ent.build_equip_1(make_equip_name)
@@ -165,6 +205,7 @@ function equip_ent.build_equip_1(make_equip_name)
         local need_heitie = build_info.heitie
         local make_id = build_info.make_id
         local make_type = build_info.make_type
+        local not_sys_id = build_info.not_sys_id
         -- 铜钱
         if actor_unit.get_cost_data(2) < need_money then
             return false
@@ -185,6 +226,7 @@ function equip_ent.build_equip_1(make_equip_name)
 
         local stuff4_name = stuff4.name
         local stuff4_need_num = stuff4.num
+
         local sys_id1 = item_ent.get_item_sys_id_by_name_and_num(stuff1_name, stuff1_need_num)
         if sys_id1 == 0 then
             return false
@@ -200,6 +242,8 @@ function equip_ent.build_equip_1(make_equip_name)
         local sys_id4 = item_ent.get_item_sys_id_by_name_and_num(stuff4_name, stuff4_need_num)
         if sys_id4 == 0 then
             if make_type == 2 then
+                make_id = build_info.qinglong_make_id
+                not_sys_id = true
                 if stuff4_name == '稀有龙鳞' then
                     stuff4_name = '稀有青龙鳞'
                 elseif stuff4_name == '稀有龙角' then
@@ -212,7 +256,7 @@ function equip_ent.build_equip_1(make_equip_name)
                     stuff4_name = '稀有青龙爪'
                 end
                 sys_id4 = item_ent.get_item_sys_id_by_name_and_num(stuff4_name, stuff4_need_num)
-                if sys_id4 == 0 then
+                if sys_id4 == 0 or build_info.qinglong_make_id == 0 then
                     return false
                 end
             else
@@ -220,11 +264,16 @@ function equip_ent.build_equip_1(make_equip_name)
             end
         end
         local heitie_num = actor_unit.get_cost_data(0xC)
-        item_unit.make_equip(make_id, sys_id1, sys_id2, sys_id3, sys_id4)
+        if not_sys_id then
+            item_unit.make_equip(make_id, 0, 0, 0, 0)
+        else
+            item_unit.make_equip(make_id, sys_id1, sys_id2, sys_id3, sys_id4)
+        end
         decider.sleep(1000)
         for i = 1, 10 do
             trace.output('制作装备[' .. make_equip_name .. ']' .. i)
             if heitie_num ~= actor_unit.get_cost_data(0xC) then
+                main_ctx:do_skey(0x1B)
                 decider.sleep(1000)
                 main_ctx:do_skey(0x1B)
                 return true
@@ -234,8 +283,6 @@ function equip_ent.build_equip_1(make_equip_name)
     end
     return false
 end
-
-
 
 -- 制造合成装备
 function equip_ent.build_equip_2(make_equip_name)
@@ -269,6 +316,7 @@ function equip_ent.build_equip_2(make_equip_name)
                     for i = 1, 10 do
                         trace.output('制作装备[' .. need_build .. ']' .. i)
                         if heitie_num ~= actor_unit.get_cost_data(0xC) then
+                            main_ctx:do_skey(0x1B)
                             decider.sleep(1000)
                             main_ctx:do_skey(0x1B)
                             break
@@ -286,8 +334,6 @@ function equip_ent.build_equip_2(make_equip_name)
         decider.sleep(30)
     end
 end
-
-
 
 -- 取两件同名称装备系统ID（主要用于取制作辅助装备）
 -- 参数1：装备名
@@ -321,14 +367,13 @@ function equip_ent.get_two_equip_sys_id(equip_name)
     return equip1_sys_id, equip2_sys_id
 end
 
-
 -------------------------------------------------------------------------------------
-
-equip_ent.enhanced_equip = function(equip_obj)
+equip_ent.enhanced_equip = function(equip_obj, enhanced_level)
+    enhanced_level = enhanced_level or 5
     while decider.is_working() do
         if item_ctx:init(equip_obj) then
             local equip_enhanced_level = item_ctx:equip_enhanced_level()
-            if item_ctx:equip_enhanced_level() >= 5 then
+            if item_ctx:equip_enhanced_level() >= enhanced_level then
                 break
             end
             local quality = item_ctx:quality()
@@ -356,11 +401,11 @@ equip_ent.enhanced_equip = function(equip_obj)
             if sys_id == 0 then
                 break
             end
-            local my_heitie =  actor_unit.get_cost_data(0xC)
+            local my_heitie = actor_unit.get_cost_data(0xC)
             item_unit.enhanced_equip(equip_sys_id, sys_id)
             decider.sleep(1000)
             for i = 1, 10 do
-                local str = string.format('强化[%s]到[%s/5]...%s', name, equip_enhanced_level,i)
+                local str = string.format('强化[%s]到[%s/5]...%s', name, equip_enhanced_level, i)
                 trace.output(str)
                 if my_heitie ~= actor_unit.get_cost_data(0xC) then
                     decider.sleep(1000)

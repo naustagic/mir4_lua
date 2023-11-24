@@ -36,18 +36,22 @@ local local_player = local_player
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
 function mail_ent.super_preload()
-    --mail_ent.get_mail()
+    this.wi_get_mail = decider.run_interval_wrapper('自动邮箱', this.get_mail, 1000 * 60 * 60 * 5)
 end
 
 -- 处理邮件
 function mail_ent.get_mail()
+    if local_player:level() < 80 then
+        return false
+    end
     for i = 1, 5 do
+
         local num = mail_unit.get_mail_num_byidx(i)
         if num > 0 then
-            -- 阅读并领取 10
-            -- git测试
+            -- 阅读并领取
             mail_unit.read_mail(i)
             decider.sleep(2000)
+            -- 删除
             mail_unit.del_mail(i)
             decider.sleep(2000)
         end
