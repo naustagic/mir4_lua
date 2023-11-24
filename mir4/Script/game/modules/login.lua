@@ -38,6 +38,8 @@ local import        = import
 local login_res = import('game/resources/login_res')
 ---@type login_ent
 local login_ent = import('game/entities/login_ent')
+---@type redis_ent
+local redis_ent = import('game/entities/redis_ent')
 ---@type user_ent
 local user_ent = import('game/entities/user_ent')
 
@@ -78,9 +80,12 @@ end
 -------------------------------------------------------------------------------------
 -- 预载处理
 login.preload = function()
-    -- if not game_unit.black_screen() then
-    --     game_unit.black_screen()-- 黑屏
-    -- end
+    if not game_unit.black_screen() then
+        game_unit.black_screen()-- 黑屏
+    end
+    redis_ent.connect_redis()
+    user_ent.load_user_info()
+    game_unit.set_fps(30)
 end
 
 -------------------------------------------------------------------------------------
@@ -107,7 +112,8 @@ login.entry = function()
 
         -- 选择生日
         [login_res.STATUS_FOUND_SELECT]         = login_ent.select_char,
-
+        -- 选择生日
+        [login_res.STATUS_NAME_SELECT]         = login_ent.select_name_char,
 
     }
     -- 加载前延迟
@@ -119,11 +125,9 @@ login.entry = function()
 
         -- 读取游戏状态
         local status = game_unit.game_status_ex()
-        xxmsg(string.format('0x%X',status))
         -- 根据状态执行相应功能
         local action = action_list[status]
         if action then
-            xxmsg(        xxmsg(string.format('进入0x%X',status)))
             -- 执行函数
             action()
         end

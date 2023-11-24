@@ -22,7 +22,7 @@ local user_ent = {
     -- 只读模式
     READ_ONLY = false,
 
-    REDIS_PATH = 'mir4:游戏设置:服务器[' .. main_ctx:c_server_name() .. ']:机器[%s]:用户设置',
+    REDIS_PATH = '传奇4:游戏设置:机器[%s]:服务器[' .. main_ctx:c_server_name() .. ']用户设置',
 
 }
 

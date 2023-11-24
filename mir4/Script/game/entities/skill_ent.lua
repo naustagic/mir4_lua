@@ -50,6 +50,31 @@ function skill_ent.auto_skill()
     skill_ent.config_skill()
 end
 
+
+--获取指定技能ID 行为ID列表 t
+function skill_ent.get_skill_id_and_action_by_name(skill_name)
+    local list = skill_unit.list(0)
+    local skill_id = 0
+    local action_list = {}
+    for i = 1, #list
+    do
+        local obj = list[i]
+        if skill_ctx:init(obj) then
+            if skill_ctx:name() == skill_name then
+                skill_id = skill_ctx:id()
+                for idx = 0,skill_ctx:action_num() - 1 do
+                    local action = skill_ctx:get_action_byidx(idx)
+                    if action ~= 0 then
+                        table.insert(action_list,action)
+                    end
+                end
+                break
+            end
+        end
+    end
+    return skill_id,action_list
+end
+
 -- 学习技能
 function skill_ent.study_skill()
     local skill_list = {

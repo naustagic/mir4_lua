@@ -17,19 +17,21 @@ _G.call_back        =  import('example/call_back')
 -- 功能模块
 local module_list = {
    -- 登陆模块
-   -- import('game/modules/login'),
+   import('game/modules/login'),
 
-   -- 主线模块
---    import('game/modules/main_quest'),
-   -- 支线模块
---    import('game/modules/main_quest'),
---    import('game/modules/side_quest'),
---    import('game/modules/mf_fb'),
---    import('game/modules/weituo_quest'),
+  -- -- 主线模块
+  -- import('game/modules/main_quest'),
+  -- -- 支线模块
+  -- import('game/modules/main_quest'),
+  -- import('game/modules/side_quest'),
+  -- import('game/modules/mf_fb'),
+  -- import('game/modules/weituo_quest'),
+  --
+  --  import('game/modules/gather_quest'),
+  --import('game/modules/gather'),
+   import('game/modules/hunt'),
+   --import('game/modules/secret'),
 
---     import('game/modules/gather_quest'),
---   import('game/modules/gather'),
-  import('game/modules/secret'),
 
 }
 

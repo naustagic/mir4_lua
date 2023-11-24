@@ -31,7 +31,7 @@ local trace = trace
 local decider = decider
 local map_unit = map_unit
 local actor_unit = actor_unit
-local map_ctx = map_ctx
+local local_player = local_player
 local actor_ctx = actor_ctx
 ------------------------------------------------------------------------------------
 -- [事件] 预载函数(重载脚本)
@@ -126,10 +126,86 @@ end
 
 
 
+--获取周围怪物_距离排序
+function actor_ent.get_near_mon_5list(kill_dist, max_level_mon)
+    local r_table = {}
+    kill_dist = kill_dist or 99999
+    max_level_mon = max_level_mon or 999
+    local list = actor_unit.list(3)
+    local max_z = this.get_max_z()
+    local my_z = local_player:cz()
+    for i = 1, #list
+    do
+        local obj = list[i]
+        if actor_ctx:init(obj) then
+            local cx = actor_ctx:cx()
+            local cy = actor_ctx:cy()
+            local cz = actor_ctx:cz()
+            local name = actor_ctx:name()
+            local level = actor_ctx:level()
+            local sys_id = actor_ctx:sys_id()
+            local dist = actor_ctx:dist()
+            local read = true
+            if read and sys_id == -1 then
+                read = false
+            end
+            if read and actor_ctx:dead() then
+                read = false
+            end
+            if read and dist > kill_dist then
+                read = false
+            end
+            if read and math.abs(my_z - cz) > max_z then
+                read = false
+            end
+
+            if read and level > max_level_mon then
+                read = false
+            end
+            if read and this.is_aberrant_mon(name) then
+                read = false
+            end
+
+            if read then
+                table.insert(r_table, { sys_id = sys_id, hp = actor_ctx:hp(), dist = dist, cx = cx, cy = cy })
+            end
+        end
+    end
+    local r_table1 = {}
+    if #r_table > 0 then
+        table.sort(r_table, function(a, b)
+            return a.dist < b.dist
+        end)
+        local idx = 1
+        for i = 1, #r_table do
+            r_table1[idx] = r_table[i].sys_id
+            idx = idx + 1
+            if idx >= 5 then
+                break
+            end
+        end
+    end
+    return r_table1
+end
 
 
+function actor_ent.is_aberrant_mon(name)
+    local monster = { '黑铁', '岩石陷阱' }
+    for i = 1, #monster do
+        if string.find(name, monster[i]) ~= nil then
+            return true
+        end
+    end
+    return false
+end
 
-
+function actor_ent.get_max_z()
+    local mapId = actor_unit.map_id()
+    if mapId == 201003010 or mapId == 201003011 or mapId == 201003012 then
+        return 500
+    end
+    return 450
+end
 
 ------------------------------------------------------------------------------------
 -- [内部] 将对象转换为字符串

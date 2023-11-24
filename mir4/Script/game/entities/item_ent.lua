@@ -60,6 +60,33 @@ function item_ent.super_preload()
 
 end
 
+function item_ent.get_can_auction_item(name)
+    local ret = {}
+    local num = 0
+    local item_obj = item_unit:new()
+    local list = item_unit.list(-1)--遍历环境(-1(所有), 0(装备), 1(材料), 2(魔石), 3(精灵), 4(杂货))
+    for i = 1, #list do
+        if item_obj:init(list[i]) and item_obj:name() == name and not item_obj:is_bind() then
+            num = item_obj:num() + num
+            ret.res_ptr = item_obj:res_ptr()
+            ret.sys_id = item_obj:sys_id()
+            ret.quality = item_obj:quality()
+            ret.id = item_obj:id()
+            ret.num = num
+            ret.equip_type = item_obj:equip_type()
+            ret.equip_enhanced_level = item_obj:equip_enhanced_level()
+            ret.equip_combat_power = item_obj:equip_combat_power()
+            ret.equip_job = item_obj:equip_job()
+            ret.equip_is_use = item_obj:equip_is_use()
+            ret.name = item_obj:name()
+        end
+    end
+    if ret.num == nil then
+        ret.num = 0
+    end
+    item_obj:delete()
+    return ret
+end
 
 -- 自动设置药品
 function item_ent.set_quick_slot()
@@ -71,14 +98,12 @@ function item_ent.set_quick_slot()
         local item_num = item_ent.get_item_num_by_name(hp_name)
         if item_num > 0 then
             local set_pos = false
-
-            if local_player:hp() * 100 / local_player:max_hp() < actor_unit.get_game_option_status(0x8) then
+            if local_player:hp() * 100 / local_player:max_hp() < actor_unit.get_game_option_status(0xB) then
                 if not item_unit.item_is_cool(id) then
                     set_pos = true
                 end
             end
-
-            if actor_unit.get_game_option_status(0x8) == 0 then
+            if actor_unit.get_game_option_status(0x8) == 0 or set_pos then
                 game_unit.set_quick_slot(id, 0)
                 decider.sleep(1000)
             end
@@ -105,6 +130,22 @@ function item_ent.set_quick_slot()
     end
 end
 
+
+-- 通过物品名获取物品sys_id
+function item_ent.get_item_sys_id_by_name_and_num2(item_name)
+    local item_sys_id = 0
+    local item_list = item_unit.list(-1)
+    for _, obj in pairs(item_list) do
+        if item_ctx:init(obj) then
+            local num = item_ctx:num()
+            if num > 0 and item_name == item_ctx:name() then
+                item_sys_id = item_ctx:sys_id()
+                break
+            end
+        end
+    end
+    return item_sys_id
+end
 
 
 -- 通过物品名物品数量获取物品sys_id

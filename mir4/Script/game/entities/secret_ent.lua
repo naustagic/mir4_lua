@@ -52,7 +52,7 @@ end
 -- 是否可进入秘境峰 没检测背包是否存在门票
 --@param id:层数 为空检测是否可以进入一层
 function secret_ent.check_qualification(id)
-    id = id and id or 0x3E9
+    id = id or 0x3E9
     return quest_unit.secret_can_enter(id)
 end
 
@@ -68,7 +68,7 @@ function secret_ent.enter_secret(id)
     -- 判断最高可以进入的层数
     if id == nil then
         for i = 10, 0, -1 do
-            xxmsg('秘境峰几层可以进入'..secret_ent.check_qualification(0x3E9+i))
+            -- xxmsg(string.format('秘境峰几层可以进入%s',secret_ent.check_qualification(0x3E9+i)))
             if secret_ent.check_qualification(0x3E9+i) then
                 quest_unit.enter_secret(0x3E9+i)
                 break
@@ -107,11 +107,14 @@ function secret_ent.begin_fight()
     local within = func.is_rang_by_point(local_player:cx(), local_player:cy(), map_point_info.x, map_point_info.y, 300)
     if not map_ent.is_move() and within then
         if local_player:auto_type() ~= 2 then
+            trace.output('自动打怪中')
             actor_unit.set_auto_type(2)
             return true
+        else
+            trace.output('[秘境峰] 自动打怪中')
         end
     end
-    decider.sleep(1000)
+    decider.sleep(100)
     return false
 end
 

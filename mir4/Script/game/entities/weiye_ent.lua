@@ -58,6 +58,10 @@ function weiye_ent.auto_great()
                     if actor_unit.char_level() < 36 then
                         can_update = false
                     end
+                elseif '闭关洞穴' == great_ctx:name() then
+                    if actor_unit.char_level() < 36 then
+                        can_update = false
+                    end
                 end
                 if can_update then
                     if  great_ctx:level() == 0 then

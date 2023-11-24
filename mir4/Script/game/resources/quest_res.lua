@@ -73,7 +73,7 @@ local quest_res = {
         ['野外'] = {
             ['银杏谷'] = { '黑云耍威风', '清除有害植物', '饿鬼不速之客', '其他毒的材料', '张氏的嘱托', '维护银杏谷的治安', '解铃还须系铃人', '银杏谷屠杀者', '机动打击', '研究蛇妖族毒术', '打压蛇妖族气势' }, -- '采集的乐趣','在银杏谷采集','在银杏谷采矿'
             ['比奇城后巷'] = { '以眼还眼', '血的代价', '后巷痞子', '歹毒高利贷', '双门帮监视队长', '监视兵的痕迹', '以牙还牙', '比奇城后巷的屠杀者', '双门帮掠夺队长', '掠夺兵的宝物' },
-            ['比奇县'] = { '掠夺强盗', '掌握犯人', '比奇县屠杀者', '善良地活着', '讨伐赤狼队' }, -- '猛兽的证据', '调查通缉犯'
+            ['比奇县'] = { '掠夺强盗', '掌握犯人', '比奇县屠杀者', '善良地活着' }, -- '猛兽的证据', '调查通缉犯', '讨伐赤狼队'
             ['半兽古墓1层'] = { '寻找线索', '墓地看守人', '确认毒雾原因', '跟随生灵的团伙', '半兽古墓1层屠杀者', '消失的宝物' },
             ['半兽古墓2层'] = { '守护不利之罪', '血海深仇', '屠杀元凶', '半兽古墓2层屠杀者', '半兽人之力' },
             ['半兽人遗迹1层'] = { '恢复原状', '危险的巨大禽兽', '保护古迹', '半兽人之怒', '真正的盗墓贼', '半兽人遗迹1层屠杀者', '盗墓贼的隐情' }, --, '某人的宝物'
@@ -89,7 +89,7 @@ local quest_res = {
             ['半兽古墓2层'] = { '黑焰族奴隶团长', '黑焰族执行者', '尤鲁侃部队', '哈侃部队', '奴隶团长的旗帜', '执行者的旗帜', '黑焰族邪灵魔', '黑焰族刽子手', '黑焰族族长', '马候部队', '拉侃部队', '邪灵魔的旗帜', '刽子手的旗帜', },
             ['半兽人遗迹1层'] = { '妖华追随者', '库鲁茨部下', '半兽人训练场', '女王的还生', '处决背德者', '憎恶半兽人之人', '妖华的饰品', '库鲁茨的手爪', '猎人的武器', '野兽王部下', '吭吭部下', '野兽中的野兽', '最强猎人', '野兽王的陷阱', '吭吭的毛' },
             ['半兽人遗迹2层'] = { '车道拉部下', '付宇部下', '真正的打手', '邪恶的法师', '车道拉的指令', '付宇的指令', '被抢走的铁矿石', '乌洛部下', '库夏部下', '军长的权威', '被遗忘的征服者', '乌洛的指令', '库夏的指令' },
-            ['牛魔神殿1层'] = { '残忍的逃兵', '邪恶变节者', '流浪汉残兵', '逃兵头领', '变节者头领', '残兵头领', '诡秘的庭院', '黒师会的存在', '如门帮的存在', '黒师会团长', '如门帮团主' },
+            ['牛魔神殿1层'] = { '残忍的逃兵', '邪恶变节者', '流浪汉残兵', '逃兵头领', '变节者头领', '残兵头领', '诡秘的庭院', '黒师会的存在', '如门帮的存在', '黒师会团长' },--, '如门帮团主'
             ['牛魔神殿2层'] = { '被占领的庭院', '被诅咒的亡灵', '邪法师的诅咒', '庭院破坏者', '被诅咒之人', '玄黑邪术师', '沃玛的秘密监牢', '游荡的冤魂', '灵魂收集家', '鬼城之恨', '亡灵支配者', '灵魂收集者', '鬼城之主' },
             ['牛魔神殿3层'] = { '可疑的厨师', '真实存在的食人群', '千夫长部下', '残忍的厨师', '食人魔队长', '千夫长', '阻挠登基仪式', '监牢看守人', '终极拷问', '牛鬼王部下', '牢头', '拷问专家', '牛鬼王' },
         },
@@ -131,7 +131,7 @@ function this.get_weituo_name_list()
     end
     local side_quest_name_list = {}
     local side_quest_list = quest_res.WEITUO_QUEST
-    if main_quest_idx >= 30 then
+    if main_quest_idx >= 29 then
         local need_do_map = {
             '银杏谷',
             '比奇城龙楼会',
@@ -150,8 +150,19 @@ function this.get_weituo_name_list()
         end
     elseif main_quest_idx >= 24 then
 
-    elseif main_quest_idx >= 12 then
-
+    elseif main_quest_idx >= 17 then
+        local need_do_map = {
+            '银杏谷',
+        }
+        for _, v in pairs(side_quest_list) do
+            for i = 1, #need_do_map do
+                if _ == need_do_map[i] then
+                    for j = 1, #v do
+                        side_quest_name_list[v[j]] = true
+                    end
+                end
+            end
+        end
     end
     return side_quest_name_list
 end
@@ -226,9 +237,40 @@ function this.get_side_name_list()
             '比奇县',
             '半兽古墓1层',
             '半兽古墓2层',
-            '半兽人遗迹1层',
-            '半兽人遗迹2层',
+        --    '半兽人遗迹1层',
+         --   '半兽人遗迹2层',
             '比奇迷宫1层',
+        }
+        for _, v in pairs(side_quest_list) do
+            for i = 1, #need_do_map do
+                if v[need_do_map[i]] then
+                    for j = 1, #v[need_do_map[i]] do
+                        side_quest_name_list[v[need_do_map[i]][j]] = true
+                    end
+                end
+            end
+        end
+    elseif main_quest_idx >= 18 then
+        local need_do_map = {
+            '银杏谷',
+            '比奇城后巷',
+            '比奇县',
+            '半兽古墓1层',
+
+        }
+        for _, v in pairs(side_quest_list) do
+            for i = 1, #need_do_map do
+                if v[need_do_map[i]] then
+                    for j = 1, #v[need_do_map[i]] do
+                        side_quest_name_list[v[need_do_map[i]][j]] = true
+                    end
+                end
+            end
+        end
+    elseif main_quest_idx > 14 or  (main_quest_idx == 14 and quest_unit.get_main_quest_idx() >= 18) then
+        local need_do_map = {
+            '银杏谷',
+            '比奇城后巷',
         }
         for _, v in pairs(side_quest_list) do
             for i = 1, #need_do_map do

@@ -88,7 +88,7 @@ this.eval_ifs = {
     time_out = 0,
     -- [其它] 特殊情况才用(可选)
     is_working = function()
-        return switch_ent.weituo_task() and not switch_ent.mf_fb()
+        return switch_ent.weituo_task() and not switch_ent.mf_fb() and not switch_ent.secret_fb()
     end,
     -- [其它] 功能函数条件(可选)
     is_execute = function()

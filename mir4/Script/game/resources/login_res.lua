@@ -35,6 +35,7 @@ local login_res = {
     STATUS_CHARACTER_SELECT = 0x4000,       --0x4000,    -- 角色选择页面
     -- 创建角色
     STATUS_FOUND_SELECT = 0x40000,       --0x4000,    -- 创建角色选择页面
+    STATUS_NAME_SELECT = 0x20000,       --0x4000,    -- 创建角色选择页面
 
     -- 创建角色
     -- 游戏里面
@@ -89,7 +90,7 @@ end
 login_res.get_player_name = function()
     local str = this.PLAYER_NAME
     local name = ""
-    for i = 1, 8 do
+    for i = 1, 10 do
         name = name .. str[math.random(#str)]
     end
     name = tostring(name)

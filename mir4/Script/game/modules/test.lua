@@ -32,9 +32,6 @@ local decider = decider
 local game_unit = game_unit
 local main_ctx = main_ctx
 local login_unit = login_unit
-local quest_unit = quest_unit
-local actor_unit = actor_unit
-local local_player = local_player
 local setmetatable = setmetatable
 local pairs = pairs
 local import = import
@@ -50,8 +47,8 @@ local equip_ent = import('game/entities/equip_ent')
 local example = import('example/example')
 ---@type skill_ent
 local skill_ent = import('game/entities/skill_ent')
----@type shop_ent
-local shop_ent = import('game/entities/shop_ent')
+---@type hunt_ent
+local hunt_ent = import('game/entities/hunt_ent')
 ---@type training_ent
 local training_ent = import('game/entities/training_ent')
 ---@type item_res
@@ -78,10 +75,9 @@ local gather_ent = import('game/entities/gather_ent')
 local actor_res = import('game/resources/actor_res')
 ---@type switch_ent
 local switch_ent = import('game/entities/switch_ent')
----@type redis_ent
-local redis_ent = import('game/entities/redis_ent')
----@type secret_ent
-local secret_ent = import('game/entities/secret_ent')
+
+
+
 -------------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------
@@ -136,8 +132,7 @@ test.entry = function()
     local ret_b = false
 
     -- 加载前延迟
-    -- redis_ent.get_json_data()
-    -- secret_ent.enter_secret()
+
     while decider.is_working()
     do
         -- 执行轮循任务
@@ -267,10 +262,11 @@ test.entry = function()
         --
         --local gather_info = gather_ent.get_my_gather_info()
         --xxmsg(string.format('        [0x%X] = { gather_type = 1 },', gather_info.res_id))
-        -- local str = string.format('{ map_id = %s, map_name = \'%s\', pos = { x = %s, y = %s, z = %s } },', actor_unit.map_id(), actor_unit.map_name(), local_player:cx(), local_player:cy(), local_player:cz())
-        -- xxmsg(str)
+        --local str = string.format('{ map_id = %s, map_name = \'%s\', pos = { x = %s, y = %s, z = %s } },', actor_unit.map_id(), actor_unit.map_name(), local_player:cx(), local_player:cy(), local_player:cz())
+        --xxmsg(str)
         ----
-
+--{ map_id = 102003010.0, map_name = '沃玛森林', pos = { x = -17530.65234375, y = 9080.7265625, z = 4998.2534179688 } },
+    --    xxmsg(local_player:dist_xy(-17530.65234375,9080.7265625))
 
         --2724AF765F0   5A280C   MMNewGather_BP_C_10_25  0095    true    true    00000000  00000FFF----0C381133   00000000   00   01   00   01   5F   098F   0006   미사용          [-38836.00, 3595.00, 5650.02]   53.59   0.00
 
@@ -430,12 +426,31 @@ test.entry = function()
         --local gather_info =  gather_ent.get_gather_info_by_res_id2(res_id,map_name)
         --xxmsg(gather_info.res_id)
         ----
-        -- xxmsg(switch_ent.main_task())
-        -- xxmsg(switch_ent.side_task())
-        -- xxmsg(switch_ent.mf_fb())
-        -- xxmsg(switch_ent.weituo_task())
-        -- xxmsg(switch_ent.gather_quest())
-        return false
+        --xxmsg(switch_ent.main_task())
+        --xxmsg(switch_ent.side_task())
+        --xxmsg(switch_ent.mf_fb())
+        --xxmsg(switch_ent.weituo_task())
+        --xxmsg(switch_ent.gather_quest())
+     --   item_ent.set_quick_slot()
+       -- equip_ent.wi_auto_equip()
+        --hunt_ent.auto_hunt('沃玛森林',102003010,-17205.51953125,-25744.263671875,4885.6059570312)
+        --decider.sleep(500)
+        --if quest_unit.is_in_monster_smite() then
+        --    if not quest_unit.super_man then
+        --        quest_unit.super_man = true
+        --        actor_unit.enable_super_man(true)--开启或关闭剧情中无敌
+        --        decider.sleep(1000)
+        --    end
+        --
+        --else
+        --    if quest_unit.super_man then
+        --        quest_unit.super_man = false
+        --        actor_unit.enable_super_man(false)--开启或关闭剧情中无敌
+        --        decider.sleep(1000)
+        --    end
+        --end
+        hunt_ent.normal_kill_near_5mon()
+        decider.sleep(500)
     end
     return ret_b
 end

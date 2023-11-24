@@ -106,7 +106,15 @@ end
 -------------------------------------------------------------------------------------
 -- 轮循功能入口
 mf_fb.looping = function()
-    shop_ent.wi_mf_map_auto_buy_item()
+    if game_unit.is_sleep_mode() then
+        game_unit.leave_sleep_mode()
+        decider.sleep(1000)
+    end
+    if dungeon_ent.in_mf_map() then
+        shop_ent.wi_mf_map_auto_buy_item()
+    else
+        shop_ent.wi_auto_buy_item()
+    end
     pet_ent.wi_auto_pet()
     item_ent.wi_use_unsealing_box()
     item_ent.wi_use_zhaohuan_item()

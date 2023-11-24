@@ -126,11 +126,13 @@ function login_ent.select_server()
         end
         local server_id = login_unit.get_world_id_byname(server_name)-- 服务器名称取服务器ID
         if server_id ~= -1 then
+            trace.output("[登录] - 选择服务器"..server_name)
             login_unit.select_world(server_id)-- 同一大区选择服务器
             decider.sleep(3000)
         else
             if login_unit.get_last_server() ~= server_line then
                 -- 取当前连接大区U8
+                trace.output("[登录] - 连接服务器"..server_name)
                 login_unit.connect_server(server_line)-- 连接游戏大区
                 decider.sleep(3000)
                 this.wait_connect_server()
@@ -151,6 +153,7 @@ function login_ent.wait_connect_server()
         if ui_unit.get_parent_widget('Popup_NewAccount_C', true) ~= 0 then
             break
         end
+        trace.output('[登录] 等待服务器连接完成')
         decider.sleep(3000)
     end
 end
@@ -166,16 +169,41 @@ function login_ent.select_char()
         if login_res.STATUS_CHARACTER_SELECT == game_unit.game_status_ex() then
             break
         end
-        if num >= 3 then
+        if num >= 5 then
             break
         end
         name = login_res.get_player_name()
         if this.select_race(job) then
+            trace.output("[登录] - 进入创建角色[弩手]")
             role_unit.enter_create_page()-- 进入创建角色
         end
-        if this.create_char() then
+        if login_res.STATUS_NAME_SELECT == game_unit.game_status_ex() then
+            trace.output("[登录] - 创建角色["..name.."]")
             role_unit.create_char(name, job)-- 创建角色
             decider.sleep(2000)
+        end
+        decider.sleep(1000)
+    end
+end
+
+------------------------------------------------------------------------------------
+---选择角色
+function login_ent.select_name_char()
+    local job = 4
+    local num = 0
+    local name = ""
+    while decider.is_working() do
+        num = num + 1
+        if num >= 5 then
+            break
+        end
+        name = login_res.get_player_name()
+        if login_res.STATUS_NAME_SELECT == game_unit.game_status_ex() then
+            trace.output("[登录] - 创建角色["..name.."]")
+            role_unit.create_char(name, job)-- 创建角色
+            decider.sleep(2000)
+        else
+            break
         end
         decider.sleep(1000)
     end
@@ -196,9 +224,10 @@ function login_ent.select_race(job)
         if role_unit.get_cur_select_race() == job then
             break
         end
-        if game_unit.game_status() ~= 2 then
+        if game_unit.game_status_ex() ~= login_res.STATUS_FOUND_SELECT then
             retB = false
         end
+        trace.output("[登录] - 选择职业[弩手]")
         role_unit.select_class(job)
         decider.sleep(1000)
     end
@@ -206,17 +235,6 @@ function login_ent.select_race(job)
 end
 
 
-------------------------------------------------------------------------------------
----创建角色
-function login_ent.create_char()
-    while decider.is_working() do
-        if game_unit.game_status() == 4 then
-            break
-        end
-        decider.sleep(1000)
-    end
-    return true
-end
 
 
 ------------------------------------------------------------------------------------

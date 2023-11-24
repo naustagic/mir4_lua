@@ -192,6 +192,7 @@ equip_ent.auto_del_equip = function(equip_pos, equip_quality)
     end
 end
 
+
 -- 打造材料类型的装备
 function equip_ent.build_equip_1(make_equip_name)
     -- 获取打造信息表
@@ -226,17 +227,16 @@ function equip_ent.build_equip_1(make_equip_name)
 
         local stuff4_name = stuff4.name
         local stuff4_need_num = stuff4.num
-
-        local sys_id1 = item_ent.get_item_sys_id_by_name_and_num(stuff1_name, stuff1_need_num)
-        if sys_id1 == 0 then
+        local sys_id1 = item_ent.get_item_sys_id_by_name_and_num2(stuff1_name)
+        if sys_id1 == 0 or item_ent.get_item_num_by_name(stuff1_name) < stuff1_need_num then
             return false
         end
-        local sys_id2 = item_ent.get_item_sys_id_by_name_and_num(stuff2_name, stuff2_need_num)
-        if sys_id2 == 0 then
+        local sys_id2 = item_ent.get_item_sys_id_by_name_and_num2(stuff2_name)
+        if sys_id2 == 0 or item_ent.get_item_num_by_name(stuff2_name) < stuff2_need_num then
             return false
         end
-        local sys_id3 = item_ent.get_item_sys_id_by_name_and_num(stuff3_name, stuff3_need_num)
-        if sys_id3 == 0 then
+        local sys_id3 = item_ent.get_item_sys_id_by_name_and_num2(stuff3_name)
+        if sys_id3 == 0 or item_ent.get_item_num_by_name(stuff3_name) < stuff3_need_num then
             return false
         end
         local sys_id4 = item_ent.get_item_sys_id_by_name_and_num(stuff4_name, stuff4_need_num)
@@ -283,6 +283,105 @@ function equip_ent.build_equip_1(make_equip_name)
     end
     return false
 end
+
+--
+---- 打造材料类型的装备
+--function equip_ent.build_equip_12(make_equip_name)
+--    -- 获取打造信息表
+--    xxmsg(make_equip_name)
+--    local build_info = equip_res.BUILD_EQUIP_LIST[make_equip_name]
+--    if not table.is_empty(build_info) then
+--        local stuff1 = build_info.stuff1
+--        local stuff2 = build_info.stuff2
+--        local stuff3 = build_info.stuff3
+--        local stuff4 = build_info.stuff4
+--        local need_money = build_info.money
+--        local need_heitie = build_info.heitie
+--        local make_id = build_info.make_id
+--        local make_type = build_info.make_type
+--        local not_sys_id = build_info.not_sys_id
+--        -- 铜钱
+--        if actor_unit.get_cost_data(2) < need_money then
+--            return false
+--        end
+--        --黑铁
+--        if actor_unit.get_cost_data(0xC) < need_heitie then
+--            return false
+--        end
+--        -- 通过物品名字获取物品信息
+--        local stuff1_name = stuff1.name
+--        local stuff1_need_num = stuff1.num
+--
+--        local stuff2_name = stuff2.name
+--        local stuff2_need_num = stuff2.num
+--
+--        local stuff3_name = stuff3.name
+--        local stuff3_need_num = stuff3.num
+--
+--        local stuff4_name = stuff4.name
+--        local stuff4_need_num = stuff4.num
+--
+--        local sys_id1 = item_ent.get_item_sys_id_by_name_and_num(stuff1_name, stuff1_need_num)
+--        if sys_id1 == 0 then
+--            xxmsg(1)
+--            return false
+--        end
+--        local sys_id2 = item_ent.get_item_sys_id_by_name_and_num(stuff2_name, stuff2_need_num)
+--        if sys_id2 == 0 then
+--            xxmsg(12)
+--            return false
+--        end
+--        local sys_id3 = item_ent.get_item_sys_id_by_name_and_num(stuff3_name, stuff3_need_num)
+--        if sys_id3 == 0 then
+--            xxmsg(13)
+--            return false
+--        end
+--        local sys_id4 = item_ent.get_item_sys_id_by_name_and_num(stuff4_name, stuff4_need_num)
+--        if sys_id4 == 0 then
+--            if make_type == 2 then
+--                make_id = build_info.qinglong_make_id
+--                not_sys_id = true
+--                if stuff4_name == '稀有龙鳞' then
+--                    stuff4_name = '稀有青龙鳞'
+--                elseif stuff4_name == '稀有龙角' then
+--                    stuff4_name = '稀有青龙角'
+--                elseif stuff4_name == '稀有龙皮' then
+--                    stuff4_name = '稀有青龙皮'
+--                elseif stuff4_name == '稀有龙眼' then
+--                    stuff4_name = '稀有青龙眼'
+--                elseif stuff4_name == '稀有龙爪' then
+--                    stuff4_name = '稀有青龙爪'
+--                end
+--                sys_id4 = item_ent.get_item_sys_id_by_name_and_num(stuff4_name, stuff4_need_num)
+--                if sys_id4 == 0 or build_info.qinglong_make_id == 0 then
+--                    xxmsg(15)
+--                    return false
+--                end
+--            else
+--                xxmsg(14)
+--                return false
+--            end
+--        end
+--        local heitie_num = actor_unit.get_cost_data(0xC)
+--        if not_sys_id then
+--            item_unit.make_equip(make_id, 0, 0, 0, 0)
+--        else
+--            item_unit.make_equip(make_id, sys_id1, sys_id2, sys_id3, sys_id4)
+--        end
+--        decider.sleep(1000)
+--        for i = 1, 10 do
+--            trace.output('制作装备[' .. make_equip_name .. ']' .. i)
+--            if heitie_num ~= actor_unit.get_cost_data(0xC) then
+--                main_ctx:do_skey(0x1B)
+--                decider.sleep(1000)
+--                main_ctx:do_skey(0x1B)
+--                return true
+--            end
+--            decider.sleep(1000)
+--        end
+--    end
+--    return false
+--end
 
 -- 制造合成装备
 function equip_ent.build_equip_2(make_equip_name)

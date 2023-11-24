@@ -88,7 +88,7 @@ this.eval_ifs = {
     time_out = 0,
     -- [其它] 特殊情况才用(可选)
     is_working = function()
-        return switch_ent.side_task() and not switch_ent.mf_fb() and not switch_ent.weituo_task() and not switch_ent.gather_quest()
+        return switch_ent.side_task() and not switch_ent.mf_fb() and not switch_ent.weituo_task() and not switch_ent.gather_quest() and not switch_ent.secret_fb()
     end,
     -- [其它] 功能函数条件(可选)
     is_execute = function()
@@ -115,7 +115,10 @@ end
 -------------------------------------------------------------------------------------
 -- 轮循功能入口
 side_quest.looping = function()
-
+    if game_unit.is_sleep_mode() then
+        game_unit.leave_sleep_mode()
+        decider.sleep(1000)
+    end
     training_ent.wi_auto_training()
     stone_ent.wi_set_magic_stone()
     skill_ent.wi_auto_skill()

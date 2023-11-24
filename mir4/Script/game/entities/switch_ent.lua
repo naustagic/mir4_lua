@@ -30,7 +30,7 @@ local trace = trace
 -- 决策模块
 local decider = decider
 local skill_unit = skill_unit
-local main_ctx = main_ctx
+local local_player = local_player
 local quest_unit = quest_unit
 ---@type quest_ent
 local quest_ent = import('game/entities/quest_ent')
@@ -40,6 +40,10 @@ local dungeon_ent = import('game/entities/dungeon_ent')
 local quest_res = import('game/resources/quest_res')
 ---@type gather_ent
 local gather_ent = import('game/entities/gather_ent')
+---@type secret_ent
+local secret_ent = import('game/entities/secret_ent')
+---@type transfer_ent
+local transfer_ent = import('game/entities/transfer_ent')
 
 
 ------------------------------------------------------------------------------------
@@ -72,6 +76,9 @@ end
 
 -- 是否支线
 function switch_ent.side_task()
+    if local_player:level() >= 40 then
+        return false
+    end
     if #quest_unit.list(0) >= 1 then
         return true
     end
@@ -84,16 +91,45 @@ end
 
 -- 是否魔方
 function switch_ent.mf_fb()
+    if local_player:level() >= 40 then
+        return false
+    end
+    if local_player:level() < 28 then
+        return false
+    end
     if dungeon_ent.in_mf_map() then
         return true
     end
+
     if quest_unit.square_can_enter(0x65) then
         return true
     end
+
+    return false
+end
+
+-- 是否秘境峰
+function switch_ent.secret_fb()
+    if local_player:level() >= 40 then
+        return false
+    end
+    if local_player:level() < 32 then
+        return false
+    end
+    if '秘境峰1层' == actor_unit.map_name() then
+        return true
+    end
+    if secret_ent.check_qualification() then
+        return true
+    end
+
     return false
 end
 
 function switch_ent.weituo_task()
+    if local_player:level() >= 40 then
+        return false
+    end
     if quest_ent.can_do_weituo_quest() then
         return true
     end
@@ -107,6 +143,9 @@ end
 
 -- 采集
 function switch_ent.gather_quest()
+    if local_player:level() >= 40 then
+        return false
+    end
     local side_quest_name_list = quest_res.GATHER_QUEST
     if gather_ent.can_do_side_quest(side_quest_name_list) then
         return true
@@ -116,6 +155,18 @@ function switch_ent.gather_quest()
     end
     return false
 end
+
+function switch_ent.gather()
+
+    if transfer_ent.is_warehouse_player() then
+        return false
+    end
+    if local_player:level() < 40 then
+        return false
+    end
+    return true
+end
+
 
 
 

@@ -31,7 +31,7 @@ local decider = decider
 -- 优化列表
 local game_unit = game_unit
 local main_ctx = main_ctx
-local login_unit = login_unit
+local local_player = local_player
 local setmetatable = setmetatable
 local pairs = pairs
 local import = import
@@ -61,16 +61,15 @@ local map_res = import('game/resources/map_res')
 local pet_ent = import('game/entities/pet_ent')
 ---@type mail_ent
 local mail_ent = import('game/entities/mail_ent')
----@type weiye_ent
-local weiye_ent = import('game/entities/weiye_ent')
+---@type switch_ent
+local switch_ent = import('game/entities/switch_ent')
 ---@type quest_res
 local quest_res = import('game/resources/quest_res')
 ---@type gather_ent
 local gather_ent = import('game/entities/gather_ent')
----@type switch_ent
-local switch_ent = import('game/entities/switch_ent')
----@type user_ent
-local user_ent = import('game/entities/user_ent')
+---@type transfer_ent
+local transfer_ent = import('game/entities/transfer_ent')
+
 
 -------------------------------------------------------------------------------------
 
@@ -89,7 +88,7 @@ this.eval_ifs = {
     time_out = 0,
     -- [其它] 特殊情况才用(可选)
     is_working = function()
-        return true
+        return switch_ent.gather()
 
     end,
     -- [其它] 功能函数条件(可选)
@@ -110,7 +109,6 @@ end
 -------------------------------------------------------------------------------------
 -- 预载处理
 gather.preload = function()
-    user_ent.load_user_info() -- 不可放这里只是测试用
 
 
 end
@@ -118,7 +116,11 @@ end
 -------------------------------------------------------------------------------------
 -- 轮循功能入口
 gather.looping = function()
-
+    if game_unit.is_sleep_mode() then
+        game_unit.leave_sleep_mode()
+        decider.sleep(1000)
+    end
+    transfer_ent.do_exchanges_buy_item_for_transfer()
 
 end
 
@@ -126,16 +128,22 @@ end
 -- 功能入口函数
 gather.entry = function()
     local ret_b = false
+
     -- 加载前延迟
 
     while decider.is_working()
     do
         -- 执行轮循任务
         gather.looping()
-        gather_ent.gather_mod('银杏谷')
+        local map_name = gather_ent.get_gather_map_name()
+        if map_name ~= '' then
+            xxmsg(map_name)
+            gather_ent.gather_mod(map_name)
+        else
+            trace.output('[采集] - 未获取到可分配的地图')
+        end
 
         decider.sleep(100)
-
     end
     return ret_b
 end

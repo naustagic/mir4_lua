@@ -71,7 +71,7 @@ map_ent.escape_for_recovery = function(v)
         local map_point_name = this.get_near_point(escape_list)
         local map_point_info = escape_list[map_point_name]
         cx, cy, cz = map_point_info.x, map_point_info.y, map_point_info.z
-        
+
     end
     -- local cx, cy, cz = escape_pos.x, escape_pos.y, escape_pos.z
     if not cx or cx == 0 then
@@ -109,7 +109,6 @@ function map_ent.get_near_point(map_tab)
     local min_point = -1
     local point_name = nil
     for key, value in pairs(map_tab) do
-
         if min_point == -1 then
             min_point = local_player:dist_xy(value.x, value.y)
             point_name = key
@@ -165,8 +164,7 @@ function map_ent.auto_move(map_id, x, y, z, str, dist, not_ride, break_func)
             b_ret = true
             break
         end
-        -- 上面的距离判断会比函数判断更快直接跳出导致不运行之后的需要在寻路之后调用一次
-        if break_func and break_func() then 
+        if break_func and break_func() then
             break
         end
         trace.output(str)
@@ -177,7 +175,12 @@ function map_ent.auto_move(map_id, x, y, z, str, dist, not_ride, break_func)
             -- TODO:不骑马
         end
         if map_ent.move_lag(60) then
-            map_ent.auto_move_to(-707, 16609, 2793, 101003010)
+            local map_name = map_res.GET_MAP_NAME[map_id]
+            local escape_pos = map_res.ESCAPE_POS[map_name]
+            if not escape_pos then
+                map_ent.teleport_map(101003010)
+            end
+            actor_unit.fast_move(escape_pos.x, escape_pos.y, escape_pos.z)
             decider.sleep(5000)
         end
         decider.sleep(1000)

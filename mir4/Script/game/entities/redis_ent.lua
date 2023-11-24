@@ -52,6 +52,7 @@ redis_ent.IP = '127.0.0.1'
 redis_ent.FAMILY_ID = 1
 redis_ent.TEAM_ID = 1
 local USERDATA_PATH = '传奇4:内置数据:服务器[' .. main_ctx:c_server_name() .. ']:共享数据:UserData:' .. main_ctx:c_account()
+
 ------------------------------------------------------------------------------------
 -- [事件] 预载函数(重载脚本)
 ------------------------------------------------------------------------------------
@@ -526,6 +527,93 @@ function redis_ent.read_nums_this_day_by_key_from_userdata(session,key)
     return 0
 end
 
+
+
+-------------------------------------------------------------------------------------------------------------
+-- 获取指定redis路径下可写位置,可扩展路径序号[对应路径下多个序号组成]
+--
+-- @tparam       any        key_args         指定key下需要配对的参数
+-- @tparam       string     key_name         json中的字段key
+-- @tparam       string     path             路径
+-- @tparam       number     time_out         超时时间[默认600秒]
+-- @tparam       number     max_t            可写批次[默认 10]
+-- @tparam       number     max_data         当前批次可写最大[默认 40]
+-- @tparam       userdata   obj              其他连接对象[为nil时G控制台设置的IP]
+-- @treturn      number     idx              在表中的序号
+-- @treturn      number     idx2             当前表的批次
+-- @treturn      table      ret_data         当前路径批次下的表
+-- @treturn      bool       is_exist         返回是否存在数据
+-------------------------------------------------------------------------------------------------------------
+redis_ent.get_idx_in_redis_table_list_path = function(key_args,key_name,path,time_out,max_t,max_data,obj)
+    local name     = key_args
+    -- 当前与角色名配对的key名
+    key_name       = key_name or 'name'
+    -- 当前路径下最大可设的路径数
+    max_t          = max_t or 10
+    -- 超时的时间
+    time_out       = time_out or 600
+    -- json中最大可写数
+    max_data       = max_data or 40
+    -- 保存当前redis路径下序号
+    local idx      = 0
+    -- 保存当前redis路径序号内表的序号
+    local idx2     = 0
+    -- 是否存在数据
+    local is_exist = false
+    -- 返回当前路径下数据
+    local data     = {}
+    local ret_data = {}
+    local f_idx    = 0
+    local f_idx2   = 0
+    local f_data   = {}
+    -- 遍历获取所有数据
+    for i = 1,max_t do
+        local path = path..i
+        local data1 = this.get_json_data(path,obj)
+        table.insert(data,data1)
+    end
+    -- 配对数据,销毁过期数据
+    for i = 1,#data do
+        local data1 = data[i]
+        -- 移除超时
+        for j = #data1,1,-1 do
+            if not table.is_empty(data1[j]) then
+                if  data1[j].time and os.time() - data1[j].time > time_out
+                        or data1[j].day and data1[j].day ~= os.date('%m%d')  then
+                    table.remove(data1,j)
+                end
+            end
+        end
+        -- 配对名称
+        for k,v in pairs(data1) do
+            if v[key_name] == name then
+                if idx == 0 then
+                    idx      = i
+                    idx2     = k
+                    is_exist = true
+                else
+                    table.remove(data1,k)
+                end
+            end
+        end
+        -- 保存自身数据
+        if idx ~= 0 and table.is_empty(ret_data) then
+            ret_data = data1
+        end
+        if f_idx2 == 0 and f_idx == 0 then
+            if #data1 < max_data then
+                f_idx = i
+                f_data= data1
+            end
+        end
+    end
+    if f_idx ~= 0 and idx == 0 then
+        idx  = f_idx
+        idx2 = 0
+        ret_data = f_data
+    end
+    return idx,idx2,ret_data,is_exist
+end
 
 ------------------------------------------------------------------------------------
 -- [内部] 将对象转换为字符串

@@ -53,7 +53,8 @@ local quest_res = import('game/resources/quest_res')
 ---@type revive_ent
 local revive_ent = import('game/entities/revive_ent')
 
-
+---@type map_res
+local map_res = import('game/resources/map_res')
 
 local main_ctx = main_ctx
 
@@ -79,7 +80,6 @@ function quest_ent.do_main_task()
     map_ent.escape_for_recovery()
     quest_ent.skip_game()
     local str = string.format('[主线-%s] %s 类型%s', main_task_idx, main_task_name, main_quest_type)
-
     if '漆黑的密道' == main_task_name and main_task_idx == 0 then
         local break_func = function()
             if quest_unit.get_main_quest_name() ~= '漆黑的密道' then
@@ -91,7 +91,8 @@ function quest_ent.do_main_task()
             quest_ent.skip_game()
             return false
         end
-        map_ent.auto_move(nil, quest_unit.main_quest_tx(), quest_unit.main_quest_ty(), quest_unit.main_quest_tz(), str, 100, nil, break_func)
+
+        map_ent.auto_move(nil,30851,72267, 9071, str, 100, nil, break_func)
 
     elseif '危险的救援计划' == main_task_name and main_task_idx == 8 then
         main_ctx:post_key(65, 1)
@@ -101,6 +102,8 @@ function quest_ent.do_main_task()
         skill_ent.up_skill(true)
     elseif '黑暗之影' == main_task_name and main_task_idx == 7 then
         training_ent.physical(true)
+    elseif '寻求灵药' == main_task_name and main_task_idx == 6 then
+        training_ent.force()
     elseif '寻求灵药' == main_task_name and main_task_idx == 8 then
         equip_ent.build_equip_1('丝绸衣上衣')
         equip_ent.auto_use_equip()
@@ -134,9 +137,13 @@ function quest_ent.do_main_task()
                             can_gather = true
                         elseif '寻找龙身' == main_task_name and main_task_idx == 6 then
                             can_gather = true
+                        elseif '寻找龙身' == main_task_name and main_task_idx == 11 then
+                            can_gather = true
                         elseif '寻找龙身' == main_task_name and main_task_idx == 21 then
                             can_gather = true
                         elseif '芊菲的下落Ⅰ' == main_task_name and main_task_idx == 10 then
+                            can_gather = true
+                        elseif '牛魔神殿的怪事' == main_task_name and main_task_idx == 17 then
                             can_gather = true
                         end
                         local gather_info = actor_ent.get_gather_info_by_res_id(quest_unit.main_quest_type(), can_gather)
@@ -223,6 +230,10 @@ function quest_ent.do_side_task(side_quest_name_list)
     -- 做任务
     local side_task_info = quest_ent.do_side_quest()
     if not table.is_empty(side_task_info) then
+
+        if side_task_info.name == '以牙还牙' then
+            side_task_info.map_id = 101003020
+        end
         map_ent.teleport_map(side_task_info.map_id)
         if quest_unit.quest_is_auto(side_task_info.id) then
             if func.is_rang_by_point(local_player:cx(), local_player:cy(), side_task_info.cx, side_task_info.cy, 10000) then
@@ -404,6 +415,7 @@ end
 ------------------------------------------------------------------------------------
 function quest_ent.do_weituo_task()
     revive_ent.revive_player()
+    map_ent.escape_for_recovery()
     -- 接任务
     local weituo_quest_name_list = quest_res.get_weituo_name_list()
     quest_ent.acc_weituo_quest(weituo_quest_name_list)
@@ -412,9 +424,55 @@ function quest_ent.do_weituo_task()
     if not table.is_empty(weituo_quest) then
         map_ent.teleport_map(weituo_quest.map_id)
         if weituo_quest.name == '宝物的气息' or weituo_quest.name == '勉强的工作' or '莫夜的宝物' == weituo_quest.name or '底层人的隐情' == weituo_quest.name then
+            if map_ent.move_lag(100) and 2 == local_player:status() then
+                actor_unit.fast_move(weituo_quest.cx, weituo_quest.cy, weituo_quest.cz)
+            end
             gather_ent.test(weituo_quest)
+        elseif weituo_quest.name == '为了出人头地' or weituo_quest.name == '长生不老材料' or weituo_quest.name == '狂人的痕迹' then
+            if weituo_quest.map_id == actor_unit.map_id() then
+                local gather_info = actor_ent.get_gather_info_by_res_id(weituo_quest.entrust_gather_resid, true)
+                if not table.is_empty(gather_info) then
+                    local dist = 300
+                    if func.is_rang_by_point(local_player:cx(), local_player:cy(), gather_info.cx, gather_info.cy, dist) then
+                        actor_unit.gather_ex(gather_info.sys_id)
+                        decider.sleep(4000)
+                    else
+                        actor_unit.fast_move(gather_info.cx, gather_info.cy, gather_info.cz)
+                        decider.sleep(1000)
+                    end
+                else
+                    if quest_unit.quest_is_auto(weituo_quest.id) then
+                        if map_ent.move_lag(100) and 2 == local_player:status() then
+                            quest_ent.wi_auto_side_quest(weituo_quest.id, 0)
+                            actor_unit.fast_move(weituo_quest.cx, weituo_quest.cy, weituo_quest.cz)
+                        end
+                    else
+                        quest_ent.wi_auto_side_quest(weituo_quest.id, 1)
+                    end
+                end
+            else
+                if quest_unit.quest_is_auto(weituo_quest.id) then
+                    if map_ent.move_lag(100) and 2 == local_player:status() then
+                        quest_ent.wi_auto_side_quest(weituo_quest.id, 0)
+                    end
+                else
+                    quest_ent.wi_auto_side_quest(weituo_quest.id, 1)
+                end
+            end
+            local gather_info = actor_ent.get_gather_info_by_res_id(weituo_quest.entrust_gather_resid, true)
+            if not table.is_empty(gather_info) then
+                if map_ent.move_lag(100) and 2 == local_player:status() then
+                    local dist = 300
+                    if func.is_rang_by_point(local_player:cx(), local_player:cy(), gather_info.cx, gather_info.cy, dist) then
+                        actor_unit.gather_ex(gather_info.sys_id)
+                        decider.sleep(1000)
+                    else
+                        actor_unit.fast_move(gather_info.cx, gather_info.cy, gather_info.cz)
+                        decider.sleep(1000)
+                    end
+                end
+            end
         else
-
             if quest_unit.quest_is_auto(weituo_quest.id) then
                 if func.is_rang_by_point(local_player:cx(), local_player:cy(), weituo_quest.cx, weituo_quest.cy, 1000) then
                     local str = string.format('[支线] %s 进度[%s/%s]', weituo_quest.name, weituo_quest.tar_num, weituo_quest.tar_max_num)
@@ -443,6 +501,7 @@ function quest_ent.do_weituo_task()
                 else
                     if map_ent.move_lag(100) and 2 == local_player:status() then
                         quest_ent.wi_auto_side_quest(weituo_quest.id, 0)
+                        actor_unit.fast_move(weituo_quest.cx, weituo_quest.cy, weituo_quest.cz)
                     end
                 end
             else
@@ -473,7 +532,7 @@ function quest_ent.can_acc_weituo_quest(weituo_quest_name_list)
             end
             if acc_task then
                 local combat_power = quest_ctx:combat_power()
-                if combat_power / my_combat_power > 0.95 then
+                if combat_power > my_combat_power then
                     acc_task = false
                 end
             end
@@ -534,7 +593,7 @@ function quest_ent.acc_weituo_quest(weituo_quest_name_list)
             end
             if acc_task then
                 local combat_power = quest_ctx:combat_power()
-                if combat_power / my_combat_power > 0.95 then
+                if combat_power > my_combat_power  then
                     acc_task = false
                 end
             end
@@ -630,7 +689,7 @@ function quest_ent.del_weituo_quest(weituo_quest_name_list)
             end
             if not del_task then
                 local combat_power = quest_ctx:combat_power()
-                if combat_power / my_combat_power > 0.95 then
+                if combat_power > my_combat_power then
                     del_task = true
                 end
             end
